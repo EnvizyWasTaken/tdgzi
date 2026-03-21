@@ -30,8 +30,10 @@ pub fn analyze_archive(path: &str) -> Result<ArchiveAnalysis> {
         file_count += 1;
         files.push(path_str.clone());
 
-        if path_str.contains("Makefile") {
-            has_makefile = true;
+        if let Some(name) = Path::new(&path_str).file_name() {
+            if name == "Makefile" {
+                has_makefile = true;
+            }
         }
 
         if let Ok(mode) = entry.header().mode() {
