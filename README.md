@@ -37,10 +37,11 @@ tdgzi <COMMAND>
 
 ### Commands
 
-| Command  | Description                         |
-|----------|-------------------------------------|
-| inspect  | Analyze a `.tar.gz` archive         |
-| help     | Show help information               |
+| Command  | Description                 |
+|----------|-----------------------------|
+| inspect  | Analyze a `.tar.gz` archive |
+| help     | Install a `.tar.gz` archive |
+| help     | Show help information       |
 
 ---
 
