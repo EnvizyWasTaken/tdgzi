@@ -15,6 +15,13 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Inspect { file: String },
+    Install { file: String },
+}
+
+fn analyze_and_classify(file: &str) -> anyhow::Result<(scan::ArchiveAnalysis, rules::PackageType)> {
+    let analysis = scan::analyze_archive(file)?;
+    let package = rules::classify(&analysis);
+    Ok((analysis, package))
 }
 
 fn main() {
@@ -22,24 +29,21 @@ fn main() {
 
     match cli.command {
         Commands::Inspect { file } => {
-            if let Ok(analysis) = scan::analyze_archive(&file) {
-                let package = rules::classify(&analysis);
+            match analyze_and_classify(&file) {
+                Ok((analysis, package)) => {
+                    println!("[INFO] Files: {}", analysis.file_count);
+                    println!("[INFO] Detected package type: {:?}", package);
 
-                println!("[INFO] Files: {}", analysis.file_count);
-                println!("[INFO] Detected package type: {:?}", package);
+                    println!("[INFO] Executables:");
+                    for exe in &analysis.executables {
+                        println!(" - {}", exe);
+                    }
 
-                println!("[INFO] Executables:");
-                for exe in &analysis.executables {
-                    println!(" - {}", exe);
+                    if analysis.executables.is_empty() {
+                        println!("[WARN] No executables found");
+                    }
                 }
-
-                if analysis.executables.is_empty() {
-                    println!("[WARN] No executables found");
-                }
-
-                println!("[INFO] Type: {:?}", package);
-            } else {
-                eprintln!("[ERROR] Failed to analyze archive");
+                Err(e) => eprintln!("[ERROR] {}", e),
             }
         }
 
