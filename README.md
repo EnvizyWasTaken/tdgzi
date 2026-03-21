@@ -121,7 +121,7 @@ Contributions, suggestions, and improvements are welcome!
 
 ## 🧑‍💻 Author
 
-> *Your name or handle here*
+> *Yours Truly: Envizy*
 
 ---
 
