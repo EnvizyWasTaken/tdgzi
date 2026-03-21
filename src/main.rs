@@ -18,5 +18,47 @@ enum Commands {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let cli = Cli::parse();
+
+    match cli.command {
+        Commands::Inspect { file } => {
+            if let Ok(analysis) = scan::analyze_archive(&file) {
+                let package = rules::classify(&analysis);
+
+                println!("[INFO] Files: {}", analysis.file_count);
+                println!("[INFO] Detected package type: {:?}", package);
+
+                println!("[INFO] Executables:");
+                for exe in &analysis.executables {
+                    println!(" - {}", exe);
+                }
+
+                if analysis.executables.is_empty() {
+                    println!("[WARN] No executables found");
+                }
+
+                println!("[INFO] Type: {:?}", package);
+            } else {
+                eprintln!("[ERROR] Failed to analyze archive");
+            }
+        }
+
+        Commands::Install { file } => {
+            match scan::analyze_archive(&file) {
+                Ok(analysis) => {
+                    let package = rules::classify(&analysis);
+
+                    println!("[INFO] Detected package type: {:?}", package);
+
+                    if let Err(e) = installer::install(&file, &analysis) {
+                        eprintln!("[ERROR] {}", e);
+                    } else {
+                        println!("[INFO] Installation complete ({:?})", package);
+                    }
+                }
+                Err(e) => eprintln!("[ERROR] {}", e),
+            }
+        }
+    }
 }
+
