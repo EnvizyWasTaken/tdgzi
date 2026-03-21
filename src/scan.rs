@@ -41,5 +41,6 @@ pub fn analyze_archive(path: &str) -> Result<ArchiveAnalysis> {
         file_count,
         has_makefile,
         executables,
+        files,
     })
 }
