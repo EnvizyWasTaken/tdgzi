@@ -8,6 +8,7 @@ pub struct ArchiveAnalysis {
     pub file_count: usize,
     pub has_makefile: bool,
     pub executables: Vec<String>,
+    pub files: Vec<String>,
 }
 
 pub fn analyze_archive(path: &str) -> Result<ArchiveAnalysis> {
