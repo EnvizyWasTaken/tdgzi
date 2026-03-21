@@ -1,3 +1,38 @@
+use anyhow::{Result, anyhow};
+use std::fs;
+use std::fs::File;
+use std::path::{Path, PathBuf};
+
+use flate2::read::GzDecoder;
+use tar::Archive;
+use tempfile::tempdir;
+use walkdir::WalkDir;
+
+use std::os::unix::fs::PermissionsExt;
+
+use crate::scan::ArchiveAnalysis;
+use crate::rules::{classify, PackageType};
+
+/// Entry point for installation
+pub fn install(path: &str, analysis: &ArchiveAnalysis) -> Result<()> {
+    let package_type = classify(analysis);
+
+    match package_type {
+        PackageType::Binary => install_binary(path),
+        PackageType::Source => Err(anyhow!("Source packages not supported yet")),
+        PackageType::Script => Err(anyhow!("Script installers not supported yet")),
+        PackageType::Unknown => Err(anyhow!("Unknown package type")),
+    }
+}
+
+/// Extract archive into a temporary directory
+fn extract_archive(path: &str) -> Result<PathBuf> {
+    let temp_dir = tempdir()?;
+    let extract_path = temp_dir.path().to_path_buf();
+
+    let file = File::open(path)?;
+    let decompressed = GzDecoder::new(file);
+    let mut archive = Archive::new(decompressed);
 
     archive.unpack(&extract_path)?;
 
