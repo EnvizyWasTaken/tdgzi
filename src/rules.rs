@@ -1,8 +1,8 @@
 use crate::scan::ArchiveAnalysis;
 use std::path::Path;
 
-pub const INSTALLATION_SCRIPTS: &[&str] =
-    &["install.sh", "Makefile", "CMakeLists.txt", "configure"];
+pub const SCRIPT_FILES: &[&str] = &["install.sh", "configure"];
+pub const BUILD_FILES: &[&str] = &["Makefile", "CMakeLists.txt"];
 
 #[derive(Debug)]
 pub enum PackageType {
