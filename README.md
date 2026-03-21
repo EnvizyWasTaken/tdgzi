@@ -2,17 +2,17 @@
 
 **tdgzi** is a lightweight CLI tool that simplifies installing software distributed as `.tar.gz` archives on Linux.
 
-It inspects archive contents, figures out what kind of package you’re dealing with, and helps you install it without the usual “what am I supposed to do with this?”.
+It inspects archive contents, determines what kind of package you’re dealing with, and helps you install it without the usual guesswork.
 
 ---
 
 ## Features
 
-- Fast, minimal workflow for `.tar.gz` installs  
-- Automatic archive inspection (scripts, source builds, binaries)  
-- Reduces manual steps and guesswork  
-- Designed to stay out of your way  
-- Written in Rust for speed and reliability  
+- Fast, minimal workflow for `.tar.gz` installs
+- Automatic archive inspection (scripts, source builds, binaries)
+- Basic binary installation support (`~/.local/bin`)
+- Reduces manual steps and guesswork
+- Written in Rust for speed and reliability
 
 ---
 
@@ -21,7 +21,7 @@ It inspects archive contents, figures out what kind of package you’re dealing 
 Build from source:
 
 ```bash
-git clone https://github.com/yourusername/tdgzi.git
+git clone https://github.com/EnvizyWasTaken/tdgzi.git
 cd tdgzi
 cargo build --release
 sudo cp target/release/tdgzi /usr/local/bin/
@@ -37,15 +37,17 @@ tdgzi <COMMAND>
 
 ### Commands
 
-| Command  | Description                 |
-|----------|-----------------------------|
-| inspect  | Analyze a `.tar.gz` archive |
-| help     | Install a `.tar.gz` archive |
-| help     | Show help information       |
+| Command  | Description                              |
+|----------|------------------------------------------|
+| inspect  | Analyze a `.tar.gz` archive              |
+| install  | Install supported `.tar.gz` archives     |
+| help     | Show help information                    |
 
 ---
 
-## Example
+## Examples
+
+### Inspect an archive
 
 ```bash
 tdgzi inspect package.tar.gz
@@ -55,77 +57,95 @@ Example output:
 
 ```text
 [INFO] Files: 42
+[INFO] Detected package type: Binary
 [INFO] Executables:
  - project/bin/app
-[INFO] Type: Binary
+```
+
+---
+
+### Install a binary package
+
+```bash
+tdgzi install package.tar.gz
+```
+
+Installs detected binaries to:
+
+```text
+~/.local/bin
 ```
 
 ---
 
 ## How It Works
 
-`tdgzi` scans archive contents and classifies them into one of the following:
+`tdgzi` scans archive contents and classifies them into:
 
-- **Script-based** → contains install scripts (`install.sh`, `configure`)  
-- **Source-based** → contains build systems (`Makefile`, `CMakeLists.txt`)  
-- **Binary** → contains executable files  
-- **Unknown** → unclear structure, manual intervention likely  
+- **Script-based** → contains install scripts (`install.sh`, `configure`)
+- **Source-based** → contains build systems (`Makefile`, `CMakeLists.txt`)
+- **Binary** → contains executable files
+- **Unknown** → unclear structure
 
-This classification is used to determine how installation should be handled.
-
----
-
-## Why tdgzi?
-
-Installing from `.tar.gz` archives usually looks like:
-
-- extract files  
-- poke around directories  
-- read half a README  
-- guess what command to run  
-- hope it works  
-
-`tdgzi` turns that into something predictable.
-
----
-
-## Philosophy
-
-- Keep it simple  
-- Be predictable  
-- Don’t break the user’s system  
-- Automate the boring parts, not the dangerous ones  
-
----
-
-## Safety Notice
-
-This tool can automate parts of installation, but it does not replace common sense.
-
-Always:
-- verify archive sources  
-- review scripts before running them  
-- avoid installing untrusted software  
+This classification determines how installation is handled.
 
 ---
 
 ## Status
 
-Early development. Core inspection and classification are implemented.
+**v0.1.0 — Initial release**
 
-Planned next:
-- Binary installation support  
-- Script execution safeguards  
-- Install tracking and uninstall  
+### Currently supported
+- Archive inspection
+- Binary package installation
+
+### Not yet supported
+- Script-based installers (`install.sh`, `configure`)
+- Source builds (`Makefile`, `CMake`)
+- Install tracking / uninstall
+
+---
+
+## Why tdgzi?
+
+Installing from `.tar.gz` archives usually means:
+
+- extracting files
+- digging through directories
+- guessing the right command
+- hoping it works
+
+`tdgzi` makes that process predictable.
+
+---
+
+## Philosophy
+
+- Keep it simple
+- Be predictable
+- Don’t break the user’s system
+- Automate the boring parts, not the dangerous ones
+
+---
+
+## Safety Notice
+
+`tdgzi` automates parts of installation, but it does **not replace user judgment**.
+
+Always:
+- verify archive sources
+- review scripts before running them
+- avoid installing untrusted software
 
 ---
 
 ## Roadmap
 
-- Install tracking  
-- Rollback support  
-- Dry-run mode  
-- Smarter detection heuristics  
+- Smarter binary detection
+- Dry-run mode
+- Safer overwrite handling
+- Script execution support
+- Install tracking and uninstall
 
 ---
 
@@ -133,9 +153,9 @@ Planned next:
 
 Contributions are welcome.
 
-1. Fork the repository  
-2. Create a branch  
-3. Open a pull request  
+1. Fork the repository
+2. Create a branch
+3. Open a pull request
 
 ---
 
