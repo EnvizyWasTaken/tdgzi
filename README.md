@@ -106,7 +106,7 @@ Contributions, suggestions, and improvements are welcome!
 
 ## 📄 License
 
-> *I use the MIT license, if you wanna know what it is js search it up gng :wilted_rose: :broken_heart:*
+> *I use the MIT license, if you wanna know what it is js search it up gng :broken_heart:*
 
 ---
 
