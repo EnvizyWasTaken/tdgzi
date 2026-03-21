@@ -19,6 +19,8 @@ pub fn analyze_archive(path: &str) -> Result<ArchiveAnalysis> {
     let mut has_makefile = false;
     let mut executables = Vec::new();
 
+    let mut files = Vec::new();
+
     for entry in archive.entries()? {
         let entry = entry?;
         let path = entry.path()?;
