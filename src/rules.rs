@@ -15,7 +15,15 @@ pub enum PackageType {
 pub fn classify(analysis: &ArchiveAnalysis) -> PackageType {
     let has_script = analysis.files.iter().any(|file| {
         if let Some(name) = Path::new(file).file_name() {
-            INSTALLATION_SCRIPTS.iter().any(|script| name == *script)
+            SCRIPT_FILES.iter().any(|script| name == *script)
+        } else {
+            false
+        }
+    });
+
+    let has_build = analysis.files.iter().any(|file| {
+        if let Some(name) = Path::new(file).file_name() {
+            BUILD_FILES.iter().any(|build| name == *build)
         } else {
             false
         }
@@ -23,7 +31,7 @@ pub fn classify(analysis: &ArchiveAnalysis) -> PackageType {
 
     if has_script {
         PackageType::Script
-    } else if analysis.has_makefile {
+    } else if has_build {
         PackageType::Source
     } else if !analysis.executables.is_empty() {
         PackageType::Binary
