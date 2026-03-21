@@ -1,7 +1,7 @@
 use anyhow::Result;
 use flate2::read::GzDecoder;
 use std::path::Path;
-use std::fs::{File, FileType};
+use std::fs::File;
 use tar::Archive;
 
 #[derive(Debug)]
