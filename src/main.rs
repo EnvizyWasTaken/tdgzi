@@ -48,10 +48,8 @@ fn main() {
         }
 
         Commands::Install { file } => {
-            match scan::analyze_archive(&file) {
-                Ok(analysis) => {
-                    let package = rules::classify(&analysis);
-
+            match analyze_and_classify(&file) {
+                Ok((analysis, package)) => {
                     println!("[INFO] Detected package type: {:?}", package);
 
                     if let Err(e) = installer::install(&file, &analysis) {
