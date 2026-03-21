@@ -106,13 +106,12 @@ Contributions, suggestions, and improvements are welcome!
 
 ## 📄 License
 
-> *Specify your license here (e.g., MIT, GPL, etc.)*
+> *I use the MIT license, if you wanna know what it is js search it up gng :wilted_rose: :broken_heart:*
 
 ---
 
 ## 💡 Future Ideas
 
-* Automatic build detection (`configure`, `cmake`, `make`, etc.)
 * Install location suggestions
 * Rollback support
 * Package tracking
