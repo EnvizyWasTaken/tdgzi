@@ -25,6 +25,7 @@ pub fn analyze_archive(path: &str) -> Result<ArchiveAnalysis> {
         let path_str = path.to_string_lossy().to_string();
 
         file_count += 1;
+        files.push(path_str.clone());
 
         if path_str.contains("Makefile") {
             has_makefile = true;
