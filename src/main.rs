@@ -1,6 +1,8 @@
 mod installer;
 mod rules;
 mod scan;
+mod db;
+mod uninstall;
 
 use clap::{Parser, Subcommand};
 
@@ -40,6 +42,14 @@ enum Commands {
 
         #[arg(long, help = "Show what would happen without making changes")]
         dry_run: bool,
+    },
+    #[command(
+        about = "Uninstall a package",
+        long_about = "Removes files installed by tdgzi for a given package."
+    )]
+    Uninstall {
+        #[arg(help = "Package name")]
+        name: String,
     },
 }
 
@@ -93,8 +103,14 @@ fn main() {
                             println!("[INFO] Installation complete ({:?})", package);
                         }
                     }
+
                 }
                 Err(e) => eprintln!("[ERROR] {}", e),
+            }
+        }
+        Commands::Uninstall { name } => {
+            if let Err(e) = uninstall::run(&name) {
+                eprintln!("[ERROR] {}", e);
             }
         }
     }

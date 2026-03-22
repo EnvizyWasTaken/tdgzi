@@ -17,6 +17,7 @@ use std::os::unix::fs::PermissionsExt;
 
 use crate::scan::ArchiveAnalysis;
 use crate::rules::{classify, PackageType};
+use crate::db::{Package, save};
 
 /// Entry point
 pub fn install(
@@ -222,6 +223,21 @@ fn install_binary(path: &str, dry_run: bool, _verbose: bool) -> Result<()> {
     println!();
     success("Installation complete");
 
+    let package_name = Path::new(path)
+        .file_stem()
+        .unwrap()
+        .to_string_lossy()
+        .replace(".tar", "");
+
+    let pkg = Package {
+        name: package_name.clone(),
+        files: vec![target_path.to_string_lossy().to_string()],
+    };
+
+    save(&pkg)?;
+
+    substep(&format!("Recorded package '{}'", package_name));
+
     Ok(())
 }
 
@@ -245,9 +261,12 @@ fn install_source(path: &str, dry_run: bool, verbose: bool) -> Result<()> {
         step("Dry run summary");
         substep("Would run: ./configure --prefix=$HOME/.local");
         substep("Would run: make");
-        substep("Would run: make install");
+        substep("Would run: make install (via DESTDIR)");
         return Ok(());
     }
+
+    let staging_dir = tempdir()?;
+    let staging_path = staging_dir.path();
 
     println!();
 
@@ -288,9 +307,45 @@ fn install_source(path: &str, dry_run: bool, verbose: bool) -> Result<()> {
     run(
         &mut Command::new("make")
             .arg("install")
+            .arg(format!("DESTDIR={}", staging_path.display()))
             .current_dir(&project_dir),
         verbose,
     )?;
+
+    let mut installed_files = Vec::new();
+
+    for entry in WalkDir::new(staging_path) {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_file() {
+            let relative = path.strip_prefix(staging_path)?;
+            let dest = Path::new("/").join(relative);
+
+            if let Some(parent) = dest.parent() {
+                fs::create_dir_all(parent)?;
+            }
+
+            fs::copy(path, &dest)?;
+
+            installed_files.push(dest.to_string_lossy().to_string());
+        }
+    }
+
+    let package_name = Path::new(path)
+        .file_stem()
+        .unwrap()
+        .to_string_lossy()
+        .replace(".tar", "");
+
+    let pkg = Package {
+        name: package_name.clone(),
+        files: installed_files,
+    };
+
+    save(&pkg)?;
+
+    substep(&format!("Recorded package '{}'", package_name));
 
     println!();
     success("Installation complete");
