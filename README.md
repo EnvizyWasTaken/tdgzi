@@ -1,6 +1,6 @@
 # tdgzi (Tar Dot Gz Installer)
 
-> A smart CLI for installing `.tar.gz` software on Linux.
+> Install and uninstall .tar.gz apps like a package manager.
 
 ---
 
