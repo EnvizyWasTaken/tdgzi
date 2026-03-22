@@ -2,17 +2,22 @@
 
 **tdgzi** is a lightweight CLI tool that simplifies installing software distributed as `.tar.gz` archives on Linux.
 
-It inspects archive contents, determines what kind of package you’re dealing with, and helps you install it without the usual guesswork.
+It analyzes archive contents, determines package type, installs it appropriately, and tracks installed files—bringing a **pacman-like experience to raw tarballs**.
 
 ---
 
 ## Features
 
-- Fast, minimal workflow for `.tar.gz` installs
-- Automatic archive inspection (scripts, source builds, binaries)
-- Basic binary installation support (`~/.local/bin`)
-- Reduces manual steps and guesswork
-- Written in Rust for speed and reliability
+* Automatic archive inspection (binary, source, script)
+* Smart installation strategies based on package type
+* Binary installs to `~/.local/bin`
+* Source builds with proper `--prefix` handling
+* **Full install tracking (binary + source)**
+* **Uninstall support**
+* Dry-run mode for safe previews
+* Verbose mode for full build output
+* Clean, minimal terminal UX (pacman-inspired)
+* Written in Rust for speed and reliability
 
 ---
 
@@ -37,11 +42,12 @@ tdgzi <COMMAND>
 
 ### Commands
 
-| Command  | Description                              |
-|----------|------------------------------------------|
-| inspect  | Analyze a `.tar.gz` archive              |
-| install  | Install supported `.tar.gz` archives     |
-| help     | Show help information                    |
+| Command   | Description                 |
+| --------- | --------------------------- |
+| inspect   | Analyze a `.tar.gz` archive |
+| install   | Install a `.tar.gz` archive |
+| uninstall | Remove an installed package |
+| help      | Show help information       |
 
 ---
 
@@ -64,17 +70,36 @@ Example output:
 
 ---
 
-### Install a binary package
+### Install a package
 
 ```bash
 tdgzi install package.tar.gz
 ```
 
-Installs detected binaries to:
+* Automatically detects package type
+* Installs to `~/.local`
+* Tracks installed files for removal
 
-```text
-~/.local/bin
+---
+
+### Dry run
+
+```bash
+tdgzi install package.tar.gz --dry-run
 ```
+
+Shows what would happen without making changes.
+
+---
+
+### Uninstall a package
+
+```bash
+tdgzi uninstall package-name
+```
+
+* Removes all tracked files
+* Cleans up internal metadata
 
 ---
 
@@ -82,27 +107,76 @@ Installs detected binaries to:
 
 `tdgzi` scans archive contents and classifies them into:
 
-- **Script-based** → contains install scripts (`install.sh`, `configure`)
-- **Source-based** → contains build systems (`Makefile`, `CMakeLists.txt`)
-- **Binary** → contains executable files
-- **Unknown** → unclear structure
+* **Script-based** → contains install scripts (`install.sh`)
+* **Source-based** → contains build systems (`Makefile`, `configure`, `CMakeLists.txt`)
+* **Binary** → contains executable files
+* **Unknown** → unclear structure
 
-This classification determines how installation is handled.
+### Installation Strategies
+
+* **Binary**
+
+    * Extract → locate executable → copy to `~/.local/bin`
+
+* **Source (GNU-style)**
+
+    * `./configure --prefix=$HOME/.local`
+    * `make`
+    * `make install DESTDIR=<staging>`
+    * Files are moved into the system and tracked
+
+* **Script**
+
+    * Executes `install.sh` with confirmation
+
+---
+
+## Install Tracking
+
+tdgzi tracks installed files per package:
+
+```text
+~/.local/share/tdgzi/db/
+```
+
+Each package has a JSON record:
+
+```json
+{
+  "name": "example",
+  "files": [
+    "/home/user/.local/bin/example"
+  ]
+}
+```
+
+This enables:
+
+* reliable uninstall
+* future upgrades
+* conflict detection (planned)
 
 ---
 
 ## Status
 
-**v0.1.0 — Initial release**
+**v0.2.0 — Tracking + Uninstall Release**
 
-### Currently supported
-- Archive inspection
-- Binary package installation
+### Supported
 
-### Not yet supported
-- Script-based installers (`install.sh`, `configure`)
-- Source builds (`Makefile`, `CMake`)
-- Install tracking / uninstall
+* Archive inspection
+* Binary installation
+* Source installation (GNU-style)
+* Script installers (`install.sh`)
+* Install tracking
+* Uninstall
+
+### Limitations
+
+* No dependency resolution
+* Some build systems may ignore `DESTDIR`
+* No upgrade system yet
+* Limited script detection
 
 ---
 
@@ -110,42 +184,48 @@ This classification determines how installation is handled.
 
 Installing from `.tar.gz` archives usually means:
 
-- extracting files
-- digging through directories
-- guessing the right command
-- hoping it works
+* extracting files
+* digging through directories
+* guessing commands
+* dealing with permissions
 
-`tdgzi` makes that process predictable.
+`tdgzi` makes that process:
+
+* predictable
+* repeatable
+* reversible
 
 ---
 
 ## Philosophy
 
-- Keep it simple
-- Be predictable
-- Don’t break the user’s system
-- Automate the boring parts, not the dangerous ones
+* Keep it simple
+* Be predictable
+* Don’t break the user’s system
+* Automate the boring parts, not the dangerous ones
 
 ---
 
 ## Safety Notice
 
-`tdgzi` automates parts of installation, but it does **not replace user judgment**.
+`tdgzi` automates installation, but does **not replace user judgment**.
 
 Always:
-- verify archive sources
-- review scripts before running them
-- avoid installing untrusted software
+
+* verify archive sources
+* review scripts before executing them
+* avoid installing untrusted software
 
 ---
 
 ## Roadmap
 
-- Smarter binary detection
-- Dry-run mode
-- Safer overwrite handling
-- Script execution support
-- Install tracking and uninstall
+* Package listing (`tdgzi list`)
+* Smarter script detection
+* Better prefix enforcement
+* Conflict detection
+* Upgrade support
+* Dependency hints
 
 ---
 
@@ -171,4 +251,4 @@ Envizy
 
 ---
 
-**tdgzi — because manually installing tarballs is a personality trait you don’t need.**
+**tdgzi — because manually installing tarballs shouldn’t feel like archaeology.**
