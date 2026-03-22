@@ -14,18 +14,17 @@ use crate::scan::ArchiveAnalysis;
 use crate::rules::{classify, PackageType};
 
 /// Entry point for installation
-pub fn install(path: &str, analysis: &ArchiveAnalysis) -> Result<()> {
+pub fn install(path: &str, analysis: &ArchiveAnalysis, dry_run: bool) -> Result<()> {
     let package_type = classify(analysis);
 
     match package_type {
-        PackageType::Binary => install_binary(path),
+        PackageType::Binary => install_binary(path, dry_run),
         PackageType::Source => Err(anyhow!("Source packages not supported yet")),
         PackageType::Script => Err(anyhow!("Script installers not supported yet")),
         PackageType::Unknown => Err(anyhow!("Unknown package type")),
     }
 }
 
-/// Extract archive into a temporary directory
 fn extract_archive(path: &str) -> Result<PathBuf> {
     let temp_dir = tempdir()?;
     let extract_path = temp_dir.path().to_path_buf();
@@ -42,7 +41,7 @@ fn extract_archive(path: &str) -> Result<PathBuf> {
     Ok(extract_path)
 }
 
-/// Find a likely executable binary inside extracted files
+
 fn find_binary(extract_path: &Path) -> Result<PathBuf> {
     let mut candidates = Vec::new();
 
@@ -72,8 +71,7 @@ fn find_binary(extract_path: &Path) -> Result<PathBuf> {
     Ok(candidates[0].clone())
 }
 
-/// Install binary into ~/.local/bin
-fn install_binary(path: &str) -> Result<()> {
+fn install_binary(path: &str, dry_run: bool) -> Result<()> {
     println!("[INFO] Extracting archive...");
 
     let extract_path = extract_archive(path)?;
@@ -87,15 +85,21 @@ fn install_binary(path: &str) -> Result<()> {
     let home = std::env::var("HOME")?;
     let target_dir = PathBuf::from(home).join(".local/bin");
 
-    fs::create_dir_all(&target_dir)?;
-
     let file_name = binary_path
         .file_name()
         .ok_or_else(|| anyhow!("Invalid binary name"))?;
 
     let target_path = target_dir.join(file_name);
 
-    // Handle overwrite safely
+    if dry_run {
+        println!("[DRY RUN] Would create directory: {}", target_dir.display());
+        println!("[DRY RUN] Would copy:");
+        println!("           {} -> {}", binary_path.display(), target_path.display());
+        return Ok(());
+    }
+
+    fs::create_dir_all(&target_dir)?;
+
     if target_path.exists() {
         println!("[WARN] {} already exists", target_path.display());
         println!("[INFO] Overwriting...");

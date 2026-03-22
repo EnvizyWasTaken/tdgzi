@@ -34,6 +34,9 @@ enum Commands {
     Install {
         #[arg(help = "Path to the .tar.gz file")]
         file: String,
+
+        #[arg(long, help = "Show what would happen without making changes")]
+        dry_run: bool,
     },
 }
 
@@ -68,15 +71,19 @@ fn main() {
             }
         }
 
-        Commands::Install { file } => {
+        Commands::Install { file, dry_run } => {
             match analyze_and_classify(&file) {
                 Ok((analysis, package)) => {
                     println!("[INFO] Detected package type: {:?}", package);
 
-                    if let Err(e) = installer::install(&file, &analysis) {
+                    if let Err(e) = installer::install(&file, &analysis, dry_run) {
                         eprintln!("[ERROR] {}", e);
                     } else {
-                        println!("[INFO] Installation complete ({:?})", package);
+                        if dry_run {
+                            println!("[DRY RUN] Dry run complete ({:?})", package);
+                        } else {
+                            println!("[INFO] Installation complete ({:?})", package);
+                        }
                     }
                 }
                 Err(e) => eprintln!("[ERROR] {}", e),
