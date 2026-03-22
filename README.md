@@ -1,7 +1,7 @@
 # tdgzi (Tar Dot Gz Installer)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Rust](https://img.shields.io/badge/built_with-Rust-orange)
+![Rust](https://img.shields.io/badge/Rust-000000?logo=rust)
 [![Stars](https://img.shields.io/github/stars/EnvizyWasTaken/tdgzi)](https://github.com/EnvizyWasTaken/tdgzi)
 ![Version](https://img.shields.io/badge/version-v0.2.0-blue)
 
