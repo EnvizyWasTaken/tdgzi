@@ -7,6 +7,7 @@ use flate2::read::GzDecoder;
 use tar::Archive;
 use tempfile::tempdir;
 use walkdir::WalkDir;
+use std::io::{self, Write};
 
 use std::os::unix::fs::PermissionsExt;
 
@@ -23,6 +24,23 @@ pub fn install(path: &str, analysis: &ArchiveAnalysis, dry_run: bool) -> Result<
         PackageType::Script => Err(anyhow!("Script installers not supported yet")),
         PackageType::Unknown => Err(anyhow!("Unknown package type")),
     }
+}
+
+fn confirm(prompt: &str, default: bool) -> Result<bool> {
+    let suffix = if default { "[y/N]" } else { "[Y/n]" };
+    println!("{} {}: ", prompt, suffix);
+    io::stdout().flush()?;
+
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+
+    let input = input.trim().to_lowercase();
+
+    if input.is_empty() {
+        return Ok(default);
+    }
+
+    Ok(input == "y" || input == "yes")
 }
 
 fn extract_archive(path: &str) -> Result<PathBuf> {
@@ -102,6 +120,16 @@ fn install_binary(path: &str, dry_run: bool) -> Result<()> {
 
     if target_path.exists() {
         println!("[WARN] {} already exists", target_path.display());
+
+        if dry_run {
+            println!("[DRY RUN] {} would be overwritten", target_path.display());
+            return Ok(());
+        }
+
+        if !confirm("Overwrite?", false)? {
+            return Err(anyhow!("Installation aborted by user"));
+        }
+
         println!("[INFO] Overwriting...");
     }
 
