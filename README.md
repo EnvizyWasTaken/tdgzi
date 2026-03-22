@@ -1,5 +1,10 @@
 # tdgzi (Tar Dot Gz Installer)
 
+![License](https://img.shields.io/badge/license-MIT-green)
+![Rust](https://img.shields.io/badge/built_with-Rust-orange)
+[![Stars](https://img.shields.io/github/stars/EnvizyWasTaken/tdgzi)](https://github.com/EnvizyWasTaken/tdgzi)
+![Version](https://img.shields.io/badge/version-v0.2.0-blue)
+
 > Install and uninstall .tar.gz apps like a package manager.
 
 ---
@@ -7,7 +12,6 @@
 **tdgzi** is a lightweight CLI tool that simplifies installing software distributed as `.tar.gz` archives on Linux.
 
 It analyzes archive contents, determines package type, installs it appropriately, and tracks installed files—bringing a **pacman-like experience to raw tarballs**.
-
 ---
 
 ## Table of Contents
