@@ -12,6 +12,9 @@ use clap::{Parser, Subcommand};
     version
 )]
 struct Cli {
+    #[arg(short, long, global = true)]
+    verbose: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -29,7 +32,7 @@ enum Commands {
 
     #[command(
         about = "Install a .tar.gz archive",
-        long_about = "Extracts the archive, detects its type, and installs it (currently supports binary packages into ~/.local/bin)."
+        long_about = "Extracts the archive, detects its type, and installs it."
     )]
     Install {
         #[arg(help = "Path to the .tar.gz file")]
@@ -76,7 +79,12 @@ fn main() {
                 Ok((analysis, package)) => {
                     println!("[INFO] Detected package type: {:?}", package);
 
-                    if let Err(e) = installer::install(&file, &analysis, dry_run) {
+                    if let Err(e) = installer::install(
+                        &file,
+                        &analysis,
+                        dry_run,
+                        cli.verbose,
+                    ) {
                         eprintln!("[ERROR] {}", e);
                     } else {
                         if dry_run {
