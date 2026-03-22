@@ -2,19 +2,22 @@ use anyhow::{Result, anyhow};
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::io::{self, Write, Read};
 
 use flate2::read::GzDecoder;
 use tar::Archive;
 use tempfile::tempdir;
 use walkdir::WalkDir;
-use std::io::{self, Write};
+
+use indicatif::{ProgressBar, ProgressStyle};
+use console::style;
 
 use std::os::unix::fs::PermissionsExt;
 
 use crate::scan::ArchiveAnalysis;
 use crate::rules::{classify, PackageType};
 
-/// Entry point for installation
+/// Entry point
 pub fn install(path: &str, analysis: &ArchiveAnalysis, dry_run: bool) -> Result<()> {
     let package_type = classify(analysis);
 
@@ -27,8 +30,8 @@ pub fn install(path: &str, analysis: &ArchiveAnalysis, dry_run: bool) -> Result<
 }
 
 fn confirm(prompt: &str, default: bool) -> Result<bool> {
-    let suffix = if default { "[y/N]" } else { "[Y/n]" };
-    println!("{} {}: ", prompt, suffix);
+    let suffix = if default { "[Y/n]" } else { "[y/N]" };
+    print!("{} {}: ", prompt, suffix);
     io::stdout().flush()?;
 
     let mut input = String::new();
@@ -43,6 +46,18 @@ fn confirm(prompt: &str, default: bool) -> Result<bool> {
     Ok(input == "y" || input == "yes")
 }
 
+fn step(message: &str) {
+    println!("{}", style(format!("==> {}", message)).bold());
+}
+
+fn substep(message: &str) {
+    println!("{}", style(format!("    -> {}", message)).dim());
+}
+
+fn success(message: &str) {
+    println!("{}", style(format!(":: {}", message)).green().bold());
+}
+
 fn extract_archive(path: &str) -> Result<PathBuf> {
     let temp_dir = tempdir()?;
     let extract_path = temp_dir.path().to_path_buf();
@@ -53,12 +68,10 @@ fn extract_archive(path: &str) -> Result<PathBuf> {
 
     archive.unpack(&extract_path)?;
 
-    // Prevent deletion (temporary for now)
-    std::mem::forget(temp_dir);
+    std::mem::forget(temp_dir); // keep temp dir
 
     Ok(extract_path)
 }
-
 
 fn find_binary(extract_path: &Path) -> Result<PathBuf> {
     let mut candidates = Vec::new();
@@ -80,25 +93,61 @@ fn find_binary(extract_path: &Path) -> Result<PathBuf> {
         return Err(anyhow!("No executable found"));
     }
 
-    // Prefer binaries inside /bin/
     if let Some(bin) = candidates.iter().find(|p| p.to_string_lossy().contains("/bin/")) {
         return Ok(bin.clone());
     }
 
-    // Fallback: first executable
     Ok(candidates[0].clone())
 }
 
-fn install_binary(path: &str, dry_run: bool) -> Result<()> {
-    println!("[INFO] Extracting archive...");
+fn copy_with_progress(src: &Path, dst: &Path) -> Result<()> {
+    let mut input = File::open(src)?;
+    let mut output = File::create(dst)?;
 
+    let total_size = input.metadata()?.len();
+
+    // Skip progress bar for small files
+    if total_size < 100_000 {
+        std::io::copy(&mut input, &mut output)?;
+        return Ok(());
+    }
+
+    let pb = ProgressBar::new(total_size);
+
+    pb.set_style(
+        ProgressStyle::with_template(
+            "[{bar:40}] {bytes}/{total_bytes} ({percent}%)"
+        )
+            .unwrap()
+            .progress_chars("█░ ")
+    );
+
+    let mut buffer = [0u8; 8192];
+    let mut copied = 0;
+
+    loop {
+        let n = input.read(&mut buffer)?;
+        if n == 0 {
+            break;
+        }
+
+        output.write_all(&buffer[..n])?;
+        copied += n as u64;
+        pb.set_position(copied);
+    }
+
+    pb.finish(); // keep visible
+
+    Ok(())
+}
+
+fn install_binary(path: &str, dry_run: bool) -> Result<()> {
+    step("Extracting archive...");
     let extract_path = extract_archive(path)?;
 
-    println!("[INFO] Searching for executable...");
-
+    step("Searching for executable...");
     let binary_path = find_binary(&extract_path)?;
-
-    println!("[INFO] Found binary: {}", binary_path.display());
+    substep(&format!("Using {}", binary_path.display()));
 
     let home = std::env::var("HOME")?;
     let target_dir = PathBuf::from(home).join(".local/bin");
@@ -110,32 +159,29 @@ fn install_binary(path: &str, dry_run: bool) -> Result<()> {
     let target_path = target_dir.join(file_name);
 
     if dry_run {
-        println!("[DRY RUN] Would create directory: {}", target_dir.display());
-        println!("[DRY RUN] Would copy:");
-        println!("           {} -> {}", binary_path.display(), target_path.display());
+        step("Dry run summary");
+        substep(&format!("Would create {}", target_dir.display()));
+        substep(&format!("Would install {}", target_path.display()));
         return Ok(());
     }
 
     fs::create_dir_all(&target_dir)?;
 
     if target_path.exists() {
-        println!("[WARN] {} already exists", target_path.display());
-
-        if dry_run {
-            println!("[DRY RUN] {} would be overwritten", target_path.display());
-            return Ok(());
-        }
+        substep(&format!("{} already exists", target_path.display()));
 
         if !confirm("Overwrite?", false)? {
             return Err(anyhow!("Installation aborted by user"));
         }
-
-        println!("[INFO] Overwriting...");
     }
 
-    fs::copy(&binary_path, &target_path)?;
+    step("Installing binary...");
+    copy_with_progress(&binary_path, &target_path)?;
 
-    println!("[INFO] Installed to {}", target_path.display());
+    substep(&format!("Installed to {}", target_path.display()));
+
+    println!();
+    success("Installation complete");
 
     Ok(())
 }
