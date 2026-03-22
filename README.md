@@ -239,5 +239,3 @@ MIT License
 EnvizyWasTaken
 
 ---
-
-**tdgzi — because manually installing tarballs is not a personality trait you need**
