@@ -3,6 +3,7 @@ mod rules;
 mod scan;
 mod db;
 mod uninstall;
+mod analysis;
 
 use clap::{Parser, Subcommand};
 

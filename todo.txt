@@ -1,0 +1,4 @@
+1. Proper package database manager
+2. improved code structure to  be less nested
+3. Add pre/post script support
+4. enviroment changing after install, like changingLD_LIBRARY_PATH

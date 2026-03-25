@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize)]
 pub struct Package {
     pub name: String,
+    // pub version: String, // This is planned to be added soon, DONT FORGET ABOUT IT!!!!!
     pub files: Vec<String>,
 }
 
